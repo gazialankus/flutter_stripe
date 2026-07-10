@@ -3,6 +3,165 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-07-10
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`flutter_stripe` - `v13.1.0`](#flutter_stripe---v1310)
+
+---
+
+#### `flutter_stripe` - `v13.1.0`
+
+ - **FIX**: return sealed CollectBankAccountResult for bank account collection (#2395).
+
+
+## 2026-07-10
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`flutter_stripe_web` - `v8.1.0`](#flutter_stripe_web---v810)
+
+---
+
+#### `flutter_stripe_web` - `v8.1.0`
+
+ - **FIX**(web): unique view type per ExpressCheckoutElement instance to fix infinite spinner on remount (#2405) (#2439).
+ - **FIX**: return sealed CollectBankAccountResult for bank account collection (#2395).
+ - **FEAT**(web): add web support for collectBankAccount and verifyMicrodeposits (#2396).
+
+
+## 2026-07-10
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`stripe_ios` - `v13.1.0`](#stripe_ios---v1310)
+ - [`flutter_stripe` - `v13.0.1`](#flutter_stripe---v1301)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `flutter_stripe` - `v13.0.1`
+
+---
+
+#### `stripe_ios` - `v13.1.0`
+
+ - **FIX**: #2383 confirm token handler on payment sheet (#2400).
+
+
+## 2026-07-10
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`stripe_android` - `v13.1.0`](#stripe_android---v1310)
+ - [`flutter_stripe` - `v13.0.1`](#flutter_stripe---v1301)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `flutter_stripe` - `v13.0.1`
+
+---
+
+#### `stripe_android` - `v13.1.0`
+
+
+## 2026-07-10
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`stripe_js` - `v8.1.0`](#stripe_js---v810)
+ - [`flutter_stripe_web` - `v8.0.1`](#flutter_stripe_web---v801)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `flutter_stripe_web` - `v8.0.1`
+
+---
+
+#### `stripe_js` - `v8.1.0`
+
+ - a
+
+ - **FEAT**(web): add web support for collectBankAccount and verifyMicrodeposits (#2396).
+
+
+## 2026-07-10
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`stripe_platform_interface` - `v13.1.0`](#stripe_platform_interface---v1310)
+ - [`flutter_stripe_web` - `v8.0.1`](#flutter_stripe_web---v801)
+ - [`flutter_stripe` - `v13.0.1`](#flutter_stripe---v1301)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `flutter_stripe_web` - `v8.0.1`
+ - `flutter_stripe` - `v13.0.1`
+
+---
+
+#### `stripe_platform_interface` - `v13.1.0`
+
+ - **FIX**: #2383 confirm token handler on payment sheet (#2400).
+ - **FIX**: return sealed CollectBankAccountResult for bank account collection (#2395).
+
+
 ## 2026-06-04
 
 ### Changes
