@@ -52,6 +52,7 @@ const _$PaymentMethodTypeEnumMap = {
   PaymentMethodType.PayPal: 'PayPal',
   PaymentMethodType.USBankAccount: 'USBankAccount',
   PaymentMethodType.RevolutPay: 'RevolutPay',
+  PaymentMethodType.PayByBank: 'PayByBank',
   PaymentMethodType.Klarna: 'Klarna',
   PaymentMethodType.Link: 'Link',
   PaymentMethodType.Multibanco: 'Multibanco',
@@ -71,6 +72,7 @@ _CollectBankAccountTokenParams _$CollectBankAccountTokenParamsFromJson(
     _$UserInterfaceStyleEnumMap,
     json['userInterfaceStyle'],
   ),
+  connectedAccountId: json['connectedAccountId'] as String?,
 );
 
 Map<String, dynamic> _$CollectBankAccountTokenParamsToJson(
@@ -78,6 +80,7 @@ Map<String, dynamic> _$CollectBankAccountTokenParamsToJson(
 ) => <String, dynamic>{
   'userInterfaceStyle':
       _$UserInterfaceStyleEnumMap[instance.userInterfaceStyle],
+  'connectedAccountId': instance.connectedAccountId,
 };
 
 _CollectBankAccountPaymentMethodData

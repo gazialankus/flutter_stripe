@@ -267,10 +267,6 @@ public abstract class NativeStripeSdkModuleSpec extends ReactContextBaseJavaModu
 
   @ReactMethod
   @DoNotStrip
-  public abstract void updateEmbeddedPaymentElementWithCheckout(String sessionKey, Promise promise);
-
-  @ReactMethod
-  @DoNotStrip
   public abstract void clearEmbeddedPaymentOption(double viewTag, Promise promise);
 
   @ReactMethod
@@ -311,10 +307,6 @@ public abstract class NativeStripeSdkModuleSpec extends ReactContextBaseJavaModu
 
   @ReactMethod
   @DoNotStrip
-  public abstract void checkoutUpdateBillingAddress(String sessionKey, ReadableMap address, @Nullable String name, @Nullable String phone, Promise promise);
-
-  @ReactMethod
-  @DoNotStrip
   public abstract void checkoutApplyPromotionCode(String sessionKey, String code, Promise promise);
 
   @ReactMethod
@@ -336,6 +328,14 @@ public abstract class NativeStripeSdkModuleSpec extends ReactContextBaseJavaModu
   @ReactMethod
   @DoNotStrip
   public abstract void checkoutRunServerUpdateComplete(String sessionKey, @Nullable String error, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void initLinkController(ReadableMap params, Promise promise);
+
+  @ReactMethod
+  @DoNotStrip
+  public abstract void presentLinkController(Promise promise);
 
   @ReactMethod
   @DoNotStrip
