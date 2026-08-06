@@ -103,8 +103,6 @@ class WebStripeCardState extends State<WebCardField> with CardFieldContext {
               .elements(createElementOptions())
               .createCard(createOptions())
             ..mount(_divElement)
-            ..onBlur((_) => _effectiveNode.unfocus())
-            ..onFocus((_) => _effectiveNode.requestFocus())
             ..onChange(onCardChanged);
     } else {
       WidgetsBinding.instance.addPostFrameCallback(
@@ -140,6 +138,14 @@ class WebStripeCardState extends State<WebCardField> with CardFieldContext {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Focus(
         focusNode: _effectiveNode,
+        // The Stripe iframe owns its own DOM focus; it must never be mirrored
+        // into the framework. When semantics are enabled (screen readers, or
+        // SemanticsBinding.ensureSemantics), focusing this node makes the
+        // engine move DOM focus to the node's flt-semantics element, which
+        // blurs the iframe the moment it is tapped and makes the field
+        // untypeable.
+        canRequestFocus: false,
+        skipTraversal: true,
         child: ConstrainedBox(
           constraints: constraints,
           child: HtmlElementView(viewType: _viewType),
