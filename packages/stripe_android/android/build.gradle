@@ -2,7 +2,10 @@ group 'com.flutter.stripe'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '2.1.0'
+    // Must stay in step with the Kotlin version the consuming app builds with:
+    // under Built-in Kotlin that is the version AGP resolves for KGP, and the
+    // Compose compiler plugin has to match the Kotlin compiler it runs in.
+    ext.kotlin_version = '2.4.10'
     ext.stripe_version = '23.12.0'
 
     repositories {
@@ -11,7 +14,10 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.9.1'
+        classpath 'com.android.tools.build:gradle:9.0.1'
+        // KGP is only *applied* on AGP < 9 (see below), but it must stay on the
+        // classpath there. The Compose compiler plugin is applied on every AGP
+        // version: Built-in Kotlin compiles Compose but does not supply the plugin.
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlin:compose-compiler-gradle-plugin:$kotlin_version"
     }
@@ -25,8 +31,25 @@ rootProject.allprojects {
 }
 
 apply plugin: 'com.android.library'
-apply plugin: "org.jetbrains.kotlin.plugin.compose"
-apply plugin: 'kotlin-android'
+
+def agpMajor = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0] as int
+
+// Compose is enabled via buildFeatures below, and AGP requires the Compose compiler
+// plugin whenever it is — Built-in Kotlin included. This plugin is not KGP, so it
+// applies on every AGP version.
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+
+// On AGP >= 9 Kotlin itself is compiled by AGP's Built-in Kotlin, and applying the
+// Kotlin Gradle Plugin on top of that is a hard error, so KGP is only applied on
+// AGP < 9 (Flutter < 3.44).
+//
+// It is applied through pluginManager rather than `apply plugin: 'kotlin-android'`
+// deliberately: Flutter detects KGP usage by regex-scanning this build script, so
+// the literal form would trip its "plugin applies KGP" warning even on AGP 9,
+// where the branch below never runs.
+if (agpMajor < 9) {
+    pluginManager.apply('kotlin-android')
+}
 
 android {
     namespace 'com.flutter.stripe'
@@ -37,31 +60,35 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = '17'
-    }
-
-    buildFeatures {
-        compose true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = '1.5.1'
-    }
-
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
     buildFeatures {
         viewBinding true
         compose true
         buildConfig true
     }
+
+    // src/main/kotlin holds the React Native compatibility shims, which are a mix
+    // of .kt and .java. Built-in Kotlin would treat the directory as Kotlin-only
+    // and the .java files would never reach javac, so register it for Java on
+    // every AGP version.
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
     defaultConfig {
         minSdkVersion 21
         consumerProguardFiles 'proguard-rules.txt'
         buildConfigField "String", "STRIPE_ANDROID_SDK_VERSION", "\"$stripe_version\""
         buildConfigField "Boolean", "IS_NEW_ARCHITECTURE_ENABLED", "false"
+    }
+}
+
+// On AGP < 9, jvmTarget must be set explicitly via the Kotlin extension.
+// On AGP >= 9, built-in Kotlin already derives it from compileOptions.targetCompatibility above.
+if (agpMajor < 9) {
+    kotlin {
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        }
     }
 }
 
