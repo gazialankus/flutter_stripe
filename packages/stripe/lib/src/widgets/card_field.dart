@@ -573,12 +573,20 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
     try {
       final map = Map<String, dynamic>.from(arguments);
       final field = CardFieldFocusName.fromJson(map);
-      if (field.focusedField != null &&
-          ambiguate(WidgetsBinding.instance)?.focusManager.primaryFocus !=
-              widget.focusNode) {
-        widget.focusNode.requestFocus();
-      }
 
+      // Deliberately does NOT mirror the platform focus back into the
+      // framework. The native card widget owns its own focus; requesting
+      // focus for [widget.focusNode] here fights the framework whenever the
+      // user moves to another Flutter field: tapping e.g. a "Name on card"
+      // TextField makes the framework blur this node, the native widget
+      // reports the change back through this handler, and the focus was then
+      // yanked straight back into the card number field. The card field was
+      // left holding framework focus without a live text input connection, so
+      // the keyboard appeared but no field accepted input.
+      //
+      // Tapping *into* the card field is already handled by the Listener in
+      // build(), which requests focus on pointer down, so nothing is lost.
+      // Same principle as the web fix in stripe_web/card_field.dart.
       widget.onFocus?.call(field.focusedField);
 
       // ignore: avoid_catches_without_on_clauses
