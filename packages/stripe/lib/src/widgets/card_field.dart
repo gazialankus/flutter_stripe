@@ -503,15 +503,7 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
       platform = Listener(
         onPointerDown: (_) {
           if (!widget.focusNode.hasFocus) {
-            // See the Android branch: the native card view focuses whichever
-            // subfield was tapped, so the focus change this triggers must not
-            // override it.
-            _focusRequestedByPointer = true;
-            _scheduleKeyboardRequest();
             widget.focusNode.requestFocus();
-          } else {
-            _scheduleKeyboardRequest();
-            _requestNativeKeyboard();
           }
         },
         child: Focus(
@@ -731,11 +723,12 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
       _methodChannel?.invokeMethod('showKeyboard');
       return;
     }
-    // Nothing to send on iOS. `focus` there is becomeFirstResponder() on the
-    // whole STPPaymentCardTextField, which selects its FIRST field rather than
-    // the one the user touched: sending it after a tap on the CVC moved focus
-    // to the card number (observed on device). Raising the keyboard for the
-    // already-focused subfield needs a command stripe_ios does not expose.
+    // Android only. iOS is deliberately left on the plugin's original
+    // behaviour: `focus` is still sent for a tap there (see the iOS Listener),
+    // and every attempt to do better made it worse on device — sending `focus`
+    // from here dragged focus off the tapped subfield, and reloadInputViews()
+    // left the keyboard open after leaving the page and could strand the card
+    // field on a letter keyboard.
   }
 
   /// Points the engine's text input at the card field's platform view.
