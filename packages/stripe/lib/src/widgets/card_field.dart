@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as dev;
 
 import 'package:flutter/foundation.dart';
@@ -351,8 +352,33 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
   int? _platformViewId;
 
   /// Whether the focus the card field is about to gain came from the user
-  /// tapping the native widget — see [_handleFrameworkFocusChanged].
+  /// tapping the native widget — see [_handleFrameworkFocusChanged]. Set on
+  /// both Android and iOS: each native view focuses the subfield under the
+  /// touch on its own.
   bool _focusRequestedByPointer = false;
+
+  /// A tap is waiting for the native view to raise its keyboard. Fired from
+  /// [_handlePlatformFocusChanged] rather than straight after the tap: the
+  /// native focus event arrives a beat later, and asking before it lands finds
+  /// no focused subfield and shows nothing.
+  bool _keyboardRequestPending = false;
+
+  /// Safety net for [_keyboardRequestPending], in case the native view never
+  /// reports a focused subfield. Deliberately later than that event: firing it
+  /// eagerly (from the post-frame callback, say) consumes the request before
+  /// the native focus lands and puts back the very race this avoids.
+  Timer? _keyboardRequestTimeout;
+
+  void _scheduleKeyboardRequest() {
+    _keyboardRequestPending = true;
+    _keyboardRequestTimeout?.cancel();
+    _keyboardRequestTimeout = Timer(const Duration(milliseconds: 400), () {
+      if (mounted && _keyboardRequestPending) {
+        _keyboardRequestPending = false;
+        _requestNativeKeyboard();
+      }
+    });
+  }
 
   CardStyle? _lastStyle;
   CardStyle resolveStyle(CardStyle? style) {
@@ -466,7 +492,17 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
             // framework focus change this causes does not override it — see
             // [_handleFrameworkFocusChanged].
             _focusRequestedByPointer = true;
+            _scheduleKeyboardRequest();
             widget.focusNode.requestFocus();
+          } else {
+            // Already focused, so no framework focus change will fire and
+            // nothing else would raise the keyboard. The native widget only
+            // shows it when the touch lands on one of its EditTexts, so a tap
+            // on the gaps between the fields — or any tap after the user
+            // dismissed the keyboard — would leave a focused card field with
+            // no keyboard at all.
+            _scheduleKeyboardRequest();
+            _requestNativeKeyboard();
           }
         },
         child: Focus(
@@ -486,7 +522,15 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
       platform = Listener(
         onPointerDown: (_) {
           if (!widget.focusNode.hasFocus) {
+            // See the Android branch: the native card view focuses whichever
+            // subfield was tapped, so the focus change this triggers must not
+            // override it.
+            _focusRequestedByPointer = true;
+            _scheduleKeyboardRequest();
             widget.focusNode.requestFocus();
+          } else {
+            _scheduleKeyboardRequest();
+            _requestNativeKeyboard();
           }
         },
         child: Focus(
@@ -609,6 +653,11 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
     try {
       final map = Map<String, dynamic>.from(arguments);
       final field = CardFieldFocusName.fromJson(map);
+      if (_keyboardRequestPending && field.focusedField != null) {
+        _keyboardRequestPending = false;
+        _keyboardRequestTimeout?.cancel();
+        _requestNativeKeyboard();
+      }
 
       // Deliberately does NOT mirror the platform focus back into the
       // framework. The native card widget owns its own focus; requesting
@@ -642,23 +691,27 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
     }
     if (!isFocused) {
       _focusRequestedByPointer = false;
+      _keyboardRequestPending = false;
+      _keyboardRequestTimeout?.cancel();
       _releaseNativeFocus();
 
       return;
     }
 
     // Only drive the native focus when the framework moved it programmatically
-    // (autofocus, CardEditController.focus, a focus traversal). `focus()` maps
-    // to requestFocusFromJS, which is hardcoded to the card *number* field, so
-    // sending it after a tap would drag focus off whichever subfield the user
-    // actually touched: tapping the visible CVC would land in the card number
-    // instead, and the CVC would scroll back out of view.
-    if (_focusRequestedByPointer) {
-      _focusRequestedByPointer = false;
-    } else {
+    // (autofocus, CardEditController.focus, a focus traversal). `focus()` is
+    // hardcoded to the card *number* field on both platforms, so sending it
+    // after a tap would fight whichever subfield the user actually touched.
+    // On Android it dragged focus onto the number and scrolled the tapped CVC
+    // back out of view; on iOS the tapped field kept focus but the keyboard
+    // was left with the configuration of the field that had it before, so
+    // tapping expiry or CVC from a name field kept a letter keyboard.
+    final fromPointer = _focusRequestedByPointer;
+    _focusRequestedByPointer = false;
+    if (!fromPointer) {
       focus();
     }
-    _claimPlatformViewTextInput();
+    _claimPlatformViewTextInput(showKeyboard: fromPointer);
   }
 
   /// Releases the native card widget's focus when framework focus leaves.
@@ -685,6 +738,24 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
     blur();
   }
 
+  /// Asks the native card widget to raise the keyboard for the subfield it
+  /// has already focused, without moving that focus.
+  ///
+  /// Android's card widget calls requestFocus() but not showSoftKeyboard()
+  /// unless the touch landed on one of its EditTexts, so tapping the gaps
+  /// between the fields focuses one and shows nothing.
+  void _requestNativeKeyboard() {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      _methodChannel?.invokeMethod('showKeyboard');
+      return;
+    }
+    // Nothing to send on iOS. `focus` there is becomeFirstResponder() on the
+    // whole STPPaymentCardTextField, which selects its FIRST field rather than
+    // the one the user touched: sending it after a tap on the CVC moved focus
+    // to the card number (observed on device). Raising the keyboard for the
+    // already-focused subfield needs a command stripe_ios does not expose.
+  }
+
   /// Points the engine's text input at the card field's platform view.
   ///
   /// [PlatformViewLink] normally sends this from its own internal FocusNode,
@@ -705,24 +776,38 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
   /// focus sends `TextInput.clearClient`, which resets the engine to no
   /// target. Claiming the platform view synchronously here would be undone by
   /// that message landing afterwards.
-  void _claimPlatformViewTextInput() {
+  void _claimPlatformViewTextInput({bool showKeyboard = false}) {
+    // Android only. There the platform view never gets framework focus (the
+    // node built by [CardField] sets `descendantsAreFocusable: false`), so
+    // PlatformViewLink never sends this and the engine keeps routing text to
+    // the last Flutter field. On iOS the UiKitView state already sends it
+    // itself when its own focus node gains focus, and sending it again from
+    // here — a frame later, out of step with the native first responder —
+    // hands text input to the engine carrying the configuration of the field
+    // the user just left, so tapping the expiry or CVC from a name field
+    // keeps a letter keyboard.
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
     final viewId = _platformViewId;
     if (viewId == null) {
       return;
     }
-    ambiguate(WidgetsBinding.instance)?.addPostFrameCallback((_) {
+    ambiguate(WidgetsBinding.instance)?.addPostFrameCallback((_) async {
       if (!mounted || !widget.focusNode.hasFocus) {
         return;
       }
-      SystemChannels.textInput
-          .invokeMethod<void>('TextInput.setPlatformViewClient', {
-            'platformViewId': viewId,
-          })
-          .catchError((Object error, StackTrace stack) {
-            // Older engines may not implement it; first-entry typing still
-            // works without it, so never take the app down for this.
-            dev.log('TextInput.setPlatformViewClient failed: $error');
-          });
+      try {
+        await SystemChannels.textInput
+            .invokeMethod<void>('TextInput.setPlatformViewClient', {
+              'platformViewId': viewId,
+            });
+        // ignore: avoid_catches_without_on_clauses
+      } catch (error) {
+        // Older engines may not implement these; first-entry typing still
+        // works without them, so never take the app down for this.
+        dev.log('handing text input to the card platform view failed: $error');
+      }
     });
   }
 
