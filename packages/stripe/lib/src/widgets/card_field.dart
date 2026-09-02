@@ -632,13 +632,37 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
       setState(() {});
     }
     if (!isFocused) {
-      blur();
+      _releaseNativeFocus();
 
       return;
     }
 
     focus();
     _claimPlatformViewTextInput();
+  }
+
+  /// Releases the native card widget's focus when framework focus leaves.
+  ///
+  /// On Android [blur] is not enough. It lands on `requestBlurFromJS`, which
+  /// is hardcoded to the card *number* field: it clears focus on that one
+  /// EditText and then hands focus to the widget's own container. So when the
+  /// expiry or CVC field is the focused one, its focus is never cleared, and
+  /// either way Android focus stays inside the card widget. The result is a
+  /// caret still blinking in the card field while the user types in another
+  /// Flutter field, and an IME session that keeps the subfield's keyboard
+  /// configuration — most visibly the CVC's number pad following focus into a
+  /// name field.
+  ///
+  /// `clearFocus` clears the whole platform view (`cardView.clearFocus()`
+  /// clears whichever descendant holds focus) and drops the IME. It is Android
+  /// only: the iOS platform view implements just `focus`/`blur`/`clear`, and
+  /// there focusing another view already cancels the previous focus.
+  void _releaseNativeFocus() {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      _methodChannel?.invokeMethod('clearFocus');
+      return;
+    }
+    blur();
   }
 
   /// Points the engine's text input at the card field's platform view.
