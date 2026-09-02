@@ -342,6 +342,10 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
     with CardFieldContext {
   MethodChannel? _methodChannel;
 
+  /// Id of the underlying platform view, needed to hand the engine's text
+  /// input back to it — see [_claimPlatformViewTextInput].
+  int? _platformViewId;
+
   CardStyle? _lastStyle;
   CardStyle resolveStyle(CardStyle? style) {
     final theme = Theme.of(context);
@@ -540,6 +544,7 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
 
   void onPlatformViewCreated(int viewId) {
     widget.focusNode.debugLabel = 'CardField(id: $viewId)';
+    _platformViewId = viewId;
     _methodChannel = MethodChannel('flutter.stripe/card_field/$viewId');
     _methodChannel?.setMethodCallHandler((call) async {
       if (call.method == 'topFocusChange') {
@@ -615,6 +620,48 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
     }
 
     focus();
+    _claimPlatformViewTextInput();
+  }
+
+  /// Points the engine's text input at the card field's platform view.
+  ///
+  /// [PlatformViewLink] normally sends this from its own internal FocusNode,
+  /// but that node can never be focused here: it is a descendant of the
+  /// [Focus] built by [CardField], whose node is created with
+  /// `descendantsAreFocusable: false`. So the engine is never told to hand
+  /// `onCreateInputConnection` to the platform view, and the IME — which is
+  /// bound to the FlutterView, not to the native EditText — keeps serving
+  /// whatever Flutter text field last attached.
+  ///
+  /// A first run looks fine because no Flutter field has attached yet. Visit
+  /// "Name on card" and come back and the card field silently drops every
+  /// character, while backspace still works, because raw key events go
+  /// straight to the focused Android view instead of through the input
+  /// connection.
+  ///
+  /// Deferred to the end of the frame on purpose: the Flutter field losing
+  /// focus sends `TextInput.clearClient`, which resets the engine to no
+  /// target. Claiming the platform view synchronously here would be undone by
+  /// that message landing afterwards.
+  void _claimPlatformViewTextInput() {
+    final viewId = _platformViewId;
+    if (viewId == null) {
+      return;
+    }
+    ambiguate(WidgetsBinding.instance)?.addPostFrameCallback((_) {
+      if (!mounted || !widget.focusNode.hasFocus) {
+        return;
+      }
+      SystemChannels.textInput
+          .invokeMethod<void>('TextInput.setPlatformViewClient', {
+            'platformViewId': viewId,
+          })
+          .catchError((Object error, StackTrace stack) {
+            // Older engines may not implement it; first-entry typing still
+            // works without it, so never take the app down for this.
+            dev.log('TextInput.setPlatformViewClient failed: $error');
+          });
+    });
   }
 
   @override
