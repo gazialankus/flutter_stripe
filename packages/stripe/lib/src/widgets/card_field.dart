@@ -350,6 +350,10 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
   /// input back to it — see [_claimPlatformViewTextInput].
   int? _platformViewId;
 
+  /// Whether the focus the card field is about to gain came from the user
+  /// tapping the native widget — see [_handleFrameworkFocusChanged].
+  bool _focusRequestedByPointer = false;
+
   CardStyle? _lastStyle;
   CardStyle resolveStyle(CardStyle? style) {
     final theme = Theme.of(context);
@@ -457,6 +461,11 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
       platform = Listener(
         onPointerDown: (_) {
           if (!widget.focusNode.hasFocus) {
+            // The touch is also going to the native card widget, which will
+            // focus whichever subfield was actually tapped. Record that so the
+            // framework focus change this causes does not override it — see
+            // [_handleFrameworkFocusChanged].
+            _focusRequestedByPointer = true;
             widget.focusNode.requestFocus();
           }
         },
@@ -632,12 +641,23 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
       setState(() {});
     }
     if (!isFocused) {
+      _focusRequestedByPointer = false;
       _releaseNativeFocus();
 
       return;
     }
 
-    focus();
+    // Only drive the native focus when the framework moved it programmatically
+    // (autofocus, CardEditController.focus, a focus traversal). `focus()` maps
+    // to requestFocusFromJS, which is hardcoded to the card *number* field, so
+    // sending it after a tap would drag focus off whichever subfield the user
+    // actually touched: tapping the visible CVC would land in the card number
+    // instead, and the CVC would scroll back out of view.
+    if (_focusRequestedByPointer) {
+      _focusRequestedByPointer = false;
+    } else {
+      focus();
+    }
     _claimPlatformViewTextInput();
   }
 
