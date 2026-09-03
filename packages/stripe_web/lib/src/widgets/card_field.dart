@@ -103,7 +103,15 @@ class WebStripeCardState extends State<WebCardField> with CardFieldContext {
               .elements(createElementOptions())
               .createCard(createOptions())
             ..mount(_divElement)
-            ..onChange(onCardChanged);
+            ..onChange(onCardChanged)
+            // Upstream declares [autofocus] but never acts on it. The iframe
+            // cannot take focus until Stripe reports it ready, so honour the
+            // flag from the ready event rather than straight after mount.
+            // Mobile browsers still refuse to raise the keyboard without a
+            // user gesture, so this places the caret and nothing more.
+            ..onReady((_) {
+              if (widget.autofocus) element?.focus();
+            });
     } else {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _mountWhenConnected(),
