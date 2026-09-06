@@ -439,6 +439,7 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
 
   @override
   void dispose() {
+    _keyboardRequestTimeout?.cancel();
     detachController(controller);
 
     super.dispose();
@@ -501,8 +502,10 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
             // on the gaps between the fields — or any tap after the user
             // dismissed the keyboard — would leave a focused card field with
             // no keyboard at all.
+            // One request only: the native focus event consumes the pending
+            // flag and raises the keyboard, and the safety-net timer covers
+            // taps that never move native focus (a gap between the fields).
             _scheduleKeyboardRequest();
-            _requestNativeKeyboard();
           }
         },
         child: Focus(
@@ -529,8 +532,10 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
             _scheduleKeyboardRequest();
             widget.focusNode.requestFocus();
           } else {
+            // One request only: the native focus event consumes the pending
+            // flag and raises the keyboard, and the safety-net timer covers
+            // taps that never move native focus (a gap between the fields).
             _scheduleKeyboardRequest();
-            _requestNativeKeyboard();
           }
         },
         child: Focus(
@@ -711,7 +716,7 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
     if (!fromPointer) {
       focus();
     }
-    _claimPlatformViewTextInput(showKeyboard: fromPointer);
+    _claimPlatformViewTextInput();
   }
 
   /// Releases the native card widget's focus when framework focus leaves.
@@ -776,7 +781,7 @@ class _MethodChannelCardFieldState extends State<_MethodChannelCardField>
   /// focus sends `TextInput.clearClient`, which resets the engine to no
   /// target. Claiming the platform view synchronously here would be undone by
   /// that message landing afterwards.
-  void _claimPlatformViewTextInput({bool showKeyboard = false}) {
+  void _claimPlatformViewTextInput() {
     // Android only. There the platform view never gets framework focus (the
     // node built by [CardField] sets `descendantsAreFocusable: false`), so
     // PlatformViewLink never sends this and the engine keeps routing text to
