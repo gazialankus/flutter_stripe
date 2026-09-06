@@ -98,20 +98,24 @@ class WebStripeCardState extends State<WebCardField> with CardFieldContext {
   void _mountWhenConnected() {
     if (!mounted) return;
     if (_divElement.isConnected) {
-      element =
-          WebStripe.js
-              .elements(createElementOptions())
-              .createCard(createOptions())
-            ..mount(_divElement)
-            ..onChange(onCardChanged)
-            // Upstream declares [autofocus] but never acts on it. The iframe
-            // cannot take focus until Stripe reports it ready, so honour the
-            // flag from the ready event rather than straight after mount.
-            // Mobile browsers still refuse to raise the keyboard without a
-            // user gesture, so this places the caret and nothing more.
-            ..onReady((_) {
-              if (widget.autofocus) element?.focus();
-            });
+      // Keep a handle on the element THIS widget created: [element] is the
+      // shared WebStripe.element, which another Stripe widget mounted or
+      // disposed later may have replaced by the time the ready event fires.
+      final card = WebStripe.js
+          .elements(createElementOptions())
+          .createCard(createOptions());
+      card
+        ..mount(_divElement)
+        ..onChange(onCardChanged)
+        // Upstream declares [autofocus] but never acts on it. The iframe
+        // cannot take focus until Stripe reports it ready, so honour the
+        // flag from the ready event rather than straight after mount.
+        // Mobile browsers still refuse to raise the keyboard without a
+        // user gesture, so this places the caret and nothing more.
+        ..onReady((_) {
+          if (mounted && widget.autofocus) card.focus();
+        });
+      element = card;
     } else {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _mountWhenConnected(),
