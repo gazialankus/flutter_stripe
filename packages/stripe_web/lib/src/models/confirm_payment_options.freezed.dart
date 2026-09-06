@@ -15,7 +15,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ConfirmPaymentElementOptions {
 
-/// Parameters that will be passed on to the Stripe API.
+/// Deferred-intent flow only: the intent created after the element
+/// collected the details. Leave null when the element was mounted with
+/// a client secret.
+ String? get clientSecret;/// Parameters that will be passed on to the Stripe API.
 /// Refer to the Payment Intents API for a full list of parameters.
  ConfirmPaymentParams get confirmParams;/// By default, stripe.confirmPayment will always redirect to your
 /// return_url after a successful confirmation.
@@ -40,16 +43,16 @@ $ConfirmPaymentElementOptionsCopyWith<ConfirmPaymentElementOptions> get copyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConfirmPaymentElementOptions&&(identical(other.confirmParams, confirmParams) || other.confirmParams == confirmParams)&&(identical(other.redirect, redirect) || other.redirect == redirect));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConfirmPaymentElementOptions&&(identical(other.clientSecret, clientSecret) || other.clientSecret == clientSecret)&&(identical(other.confirmParams, confirmParams) || other.confirmParams == confirmParams)&&(identical(other.redirect, redirect) || other.redirect == redirect));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,confirmParams,redirect);
+int get hashCode => Object.hash(runtimeType,clientSecret,confirmParams,redirect);
 
 @override
 String toString() {
-  return 'ConfirmPaymentElementOptions(confirmParams: $confirmParams, redirect: $redirect)';
+  return 'ConfirmPaymentElementOptions(clientSecret: $clientSecret, confirmParams: $confirmParams, redirect: $redirect)';
 }
 
 
@@ -60,7 +63,7 @@ abstract mixin class $ConfirmPaymentElementOptionsCopyWith<$Res>  {
   factory $ConfirmPaymentElementOptionsCopyWith(ConfirmPaymentElementOptions value, $Res Function(ConfirmPaymentElementOptions) _then) = _$ConfirmPaymentElementOptionsCopyWithImpl;
 @useResult
 $Res call({
- ConfirmPaymentParams confirmParams, PaymentConfirmationRedirect? redirect
+ String? clientSecret, ConfirmPaymentParams confirmParams, PaymentConfirmationRedirect? redirect
 });
 
 
@@ -77,9 +80,10 @@ class _$ConfirmPaymentElementOptionsCopyWithImpl<$Res>
 
 /// Create a copy of ConfirmPaymentElementOptions
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? confirmParams = null,Object? redirect = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? clientSecret = freezed,Object? confirmParams = null,Object? redirect = freezed,}) {
   return _then(_self.copyWith(
-confirmParams: null == confirmParams ? _self.confirmParams : confirmParams // ignore: cast_nullable_to_non_nullable
+clientSecret: freezed == clientSecret ? _self.clientSecret : clientSecret // ignore: cast_nullable_to_non_nullable
+as String?,confirmParams: null == confirmParams ? _self.confirmParams : confirmParams // ignore: cast_nullable_to_non_nullable
 as ConfirmPaymentParams,redirect: freezed == redirect ? _self.redirect : redirect // ignore: cast_nullable_to_non_nullable
 as PaymentConfirmationRedirect?,
   ));
@@ -175,10 +179,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ConfirmPaymentParams confirmParams,  PaymentConfirmationRedirect? redirect)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? clientSecret,  ConfirmPaymentParams confirmParams,  PaymentConfirmationRedirect? redirect)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConfirmPaymentElementOptions() when $default != null:
-return $default(_that.confirmParams,_that.redirect);case _:
+return $default(_that.clientSecret,_that.confirmParams,_that.redirect);case _:
   return orElse();
 
 }
@@ -196,10 +200,10 @@ return $default(_that.confirmParams,_that.redirect);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ConfirmPaymentParams confirmParams,  PaymentConfirmationRedirect? redirect)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? clientSecret,  ConfirmPaymentParams confirmParams,  PaymentConfirmationRedirect? redirect)  $default,) {final _that = this;
 switch (_that) {
 case _ConfirmPaymentElementOptions():
-return $default(_that.confirmParams,_that.redirect);case _:
+return $default(_that.clientSecret,_that.confirmParams,_that.redirect);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -216,10 +220,10 @@ return $default(_that.confirmParams,_that.redirect);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ConfirmPaymentParams confirmParams,  PaymentConfirmationRedirect? redirect)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? clientSecret,  ConfirmPaymentParams confirmParams,  PaymentConfirmationRedirect? redirect)?  $default,) {final _that = this;
 switch (_that) {
 case _ConfirmPaymentElementOptions() when $default != null:
-return $default(_that.confirmParams,_that.redirect);case _:
+return $default(_that.clientSecret,_that.confirmParams,_that.redirect);case _:
   return null;
 
 }
@@ -231,9 +235,13 @@ return $default(_that.confirmParams,_that.redirect);case _:
 @JsonSerializable()
 
 class _ConfirmPaymentElementOptions implements ConfirmPaymentElementOptions {
-  const _ConfirmPaymentElementOptions({required this.confirmParams, this.redirect});
+  const _ConfirmPaymentElementOptions({this.clientSecret, required this.confirmParams, this.redirect});
   factory _ConfirmPaymentElementOptions.fromJson(Map<String, dynamic> json) => _$ConfirmPaymentElementOptionsFromJson(json);
 
+/// Deferred-intent flow only: the intent created after the element
+/// collected the details. Leave null when the element was mounted with
+/// a client secret.
+@override final  String? clientSecret;
 /// Parameters that will be passed on to the Stripe API.
 /// Refer to the Payment Intents API for a full list of parameters.
 @override final  ConfirmPaymentParams confirmParams;
@@ -262,16 +270,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConfirmPaymentElementOptions&&(identical(other.confirmParams, confirmParams) || other.confirmParams == confirmParams)&&(identical(other.redirect, redirect) || other.redirect == redirect));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConfirmPaymentElementOptions&&(identical(other.clientSecret, clientSecret) || other.clientSecret == clientSecret)&&(identical(other.confirmParams, confirmParams) || other.confirmParams == confirmParams)&&(identical(other.redirect, redirect) || other.redirect == redirect));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,confirmParams,redirect);
+int get hashCode => Object.hash(runtimeType,clientSecret,confirmParams,redirect);
 
 @override
 String toString() {
-  return 'ConfirmPaymentElementOptions(confirmParams: $confirmParams, redirect: $redirect)';
+  return 'ConfirmPaymentElementOptions(clientSecret: $clientSecret, confirmParams: $confirmParams, redirect: $redirect)';
 }
 
 
@@ -282,7 +290,7 @@ abstract mixin class _$ConfirmPaymentElementOptionsCopyWith<$Res> implements $Co
   factory _$ConfirmPaymentElementOptionsCopyWith(_ConfirmPaymentElementOptions value, $Res Function(_ConfirmPaymentElementOptions) _then) = __$ConfirmPaymentElementOptionsCopyWithImpl;
 @override @useResult
 $Res call({
- ConfirmPaymentParams confirmParams, PaymentConfirmationRedirect? redirect
+ String? clientSecret, ConfirmPaymentParams confirmParams, PaymentConfirmationRedirect? redirect
 });
 
 
@@ -299,9 +307,10 @@ class __$ConfirmPaymentElementOptionsCopyWithImpl<$Res>
 
 /// Create a copy of ConfirmPaymentElementOptions
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? confirmParams = null,Object? redirect = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? clientSecret = freezed,Object? confirmParams = null,Object? redirect = freezed,}) {
   return _then(_ConfirmPaymentElementOptions(
-confirmParams: null == confirmParams ? _self.confirmParams : confirmParams // ignore: cast_nullable_to_non_nullable
+clientSecret: freezed == clientSecret ? _self.clientSecret : clientSecret // ignore: cast_nullable_to_non_nullable
+as String?,confirmParams: null == confirmParams ? _self.confirmParams : confirmParams // ignore: cast_nullable_to_non_nullable
 as ConfirmPaymentParams,redirect: freezed == redirect ? _self.redirect : redirect // ignore: cast_nullable_to_non_nullable
 as PaymentConfirmationRedirect?,
   ));

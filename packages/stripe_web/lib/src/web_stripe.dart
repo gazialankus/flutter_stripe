@@ -1,4 +1,5 @@
 //@dart=2.12
+import 'dart:js_interop';
 import 'dart:async';
 import 'dart:developer' as dev;
 import 'dart:ui' as dart_ui;
@@ -426,9 +427,11 @@ class WebStripe extends StripePlatform {
   Future<PaymentIntent> confirmPaymentElement(
     ConfirmPaymentElementOptions options,
   ) async {
+    if (options.clientSecret != null) await _submitDeferredElements();
     final response = await js.confirmPayment(
       stripe_js.ConfirmPaymentOptions(
         elements: elements!,
+        clientSecret: options.clientSecret,
         confirmParams: options.confirmParams,
         redirect: options.redirect,
       ),
@@ -440,12 +443,25 @@ class WebStripe extends StripePlatform {
     }
   }
 
+  /// Deferred-intent flow: Stripe requires `elements.submit()` (validation +
+  /// wallet collection) before confirming with a client secret that did not
+  /// exist when the element was mounted. Surfaces Stripe's own error.
+  Future<void> _submitDeferredElements() async {
+    final result = (await elements!.submit().toDart).dartify();
+    final error = result is Map ? result['error'] : null;
+    if (error is Map) {
+      throw StripeError.fromJson(Map<String, dynamic>.from(error));
+    }
+  }
+
   Future<void> confirmSetupElement(
     ConfirmSetupElementOptions options,
   ) async {
+    if (options.clientSecret != null) await _submitDeferredElements();
     final response = await js.confirmSetup(
       stripe_js.ConfirmSetupOptions(
         elements: elements!,
+        clientSecret: options.clientSecret,
         confirmParams: options.confirmParams,
         redirect: options.redirect,
       ),

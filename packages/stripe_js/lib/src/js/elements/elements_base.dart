@@ -5,6 +5,12 @@ import 'dart:js_interop';
 extension type StripeElements(JSObject o) implements JSObject, Elements {
   external StripeElement create(String type, [JSAny? options]);
   external StripeElement? getElement(String type);
+
+  /// Deferred-intent flow only: validates the mounted elements and collects
+  /// wallet data. Must resolve before `confirmSetup` / `confirmPayment` when
+  /// the group was created without a client secret.
+  /// Resolves to `{ error?: StripeError }`.
+  external JSPromise<JSObject> submit();
 }
 
 extension type ElementChangeResponse._(JSObject o) {

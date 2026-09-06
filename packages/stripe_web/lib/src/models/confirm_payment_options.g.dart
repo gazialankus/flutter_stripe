@@ -9,6 +9,7 @@ part of 'confirm_payment_options.dart';
 _ConfirmPaymentElementOptions _$ConfirmPaymentElementOptionsFromJson(
   Map json,
 ) => _ConfirmPaymentElementOptions(
+  clientSecret: json['clientSecret'] as String?,
   confirmParams: ConfirmPaymentParams.fromJson(
     Map<String, dynamic>.from(json['confirmParams'] as Map),
   ),
@@ -21,6 +22,7 @@ _ConfirmPaymentElementOptions _$ConfirmPaymentElementOptionsFromJson(
 Map<String, dynamic> _$ConfirmPaymentElementOptionsToJson(
   _ConfirmPaymentElementOptions instance,
 ) => <String, dynamic>{
+  'clientSecret': ?instance.clientSecret,
   'confirmParams': instance.confirmParams.toJson(),
   'redirect': ?_$PaymentConfirmationRedirectEnumMap[instance.redirect],
 };

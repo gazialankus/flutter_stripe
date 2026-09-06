@@ -9,6 +9,11 @@ part 'confirm_setup_options.g.dart';
 @freezed
 abstract class ConfirmSetupElementOptions with _$ConfirmSetupElementOptions {
   const factory ConfirmSetupElementOptions({
+    /// Deferred-intent flow only: the intent created after the element
+    /// collected the details. Leave null when the element was mounted with
+    /// a client secret.
+    String? clientSecret,
+
     /// Parameters that will be passed on to the Stripe API.
     /// Refer to the Payment Intents API for a full list of parameters.
     required ConfirmSetupParams confirmParams,

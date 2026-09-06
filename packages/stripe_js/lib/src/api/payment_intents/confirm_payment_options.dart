@@ -12,6 +12,10 @@ abstract class ConfirmPaymentOptions with _$ConfirmPaymentOptions {
     /// The Elements instance that was used to create the Payment Element.
     @ElementsConverter() required Elements elements,
 
+    /// The PaymentIntent's client secret. Required when the [elements] group
+    /// was created without one (deferred intent: `elements({mode, ...})`).
+    String? clientSecret,
+
     /// Parameters that will be passed on to the Stripe API.
     /// Refer to the Payment Intents API for a full list of parameters.
     required ConfirmPaymentParams confirmParams,

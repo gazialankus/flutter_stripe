@@ -21,8 +21,49 @@ typedef PaymentElementTheme = js.ElementTheme;
 
 const _defaultPaymentElementHeight = 300.0;
 
+/// Deferred-intent configuration for [PaymentElement]: render and collect
+/// before any intent exists, then create the intent on submit and pass its
+/// client secret to `WebStripe.instance.confirmSetupElement` /
+/// `confirmPaymentElement` (which call `elements.submit()` first). Mirrors
+/// Stripe.js `elements({mode, currency, ...})`.
+class PaymentElementDeferredIntent {
+  const PaymentElementDeferredIntent.setup({
+    required this.currency,
+    this.setupFutureUsage,
+    this.paymentMethodTypes,
+  }) : mode = 'setup',
+       amount = null,
+       captureMethod = null;
+
+  const PaymentElementDeferredIntent.payment({
+    required this.currency,
+    required int this.amount,
+    this.setupFutureUsage,
+    this.captureMethod,
+    this.paymentMethodTypes,
+  }) : mode = 'payment';
+
+  final String mode;
+  final String currency;
+  final int? amount;
+
+  /// `off_session` | `on_session`.
+  final String? setupFutureUsage;
+
+  /// `automatic` | `automatic_async` | `manual` (payment mode only).
+  final String? captureMethod;
+
+  /// Restricts the rendered methods; omit to follow the Dashboard config.
+  final List<String>? paymentMethodTypes;
+}
+
 class PaymentElement extends StatefulWidget {
-  final String clientSecret;
+  /// The intent's client secret. Null when [deferredIntent] is used.
+  final String? clientSecret;
+
+  /// Collect before an intent exists. Exactly one of this and [clientSecret]
+  /// must be provided.
+  final PaymentElementDeferredIntent? deferredIntent;
   final String? customerSessionClientSecret;
   final double? width;
   final double? height;
@@ -47,7 +88,8 @@ class PaymentElement extends StatefulWidget {
 
   const PaymentElement({
     super.key,
-    required this.clientSecret,
+    this.clientSecret,
+    this.deferredIntent,
     this.customerSessionClientSecret,
     this.width,
     this.height,
@@ -69,7 +111,11 @@ class PaymentElement extends StatefulWidget {
     this.terms,
     this.wallets,
     this.applePay,
-  }) : assert(maxHeight == null || maxHeight > 0);
+  }) : assert(maxHeight == null || maxHeight > 0),
+       assert(
+         (clientSecret == null) != (deferredIntent == null),
+         'PaymentElement needs exactly one of clientSecret or deferredIntent.',
+       );
 
   @override
   State<PaymentElement> createState() => PaymentElementState();
@@ -235,10 +281,27 @@ class PaymentElementState extends State<PaymentElement> {
 
   js.JsElementsCreateOptions _createOptionsOnce() {
     final appearance = widget.appearance ?? js.ElementAppearance();
+    final appearanceJs = appearance.toJson().jsify() as js.JsElementAppearance;
+    final deferred = widget.deferredIntent;
+    if (deferred != null) {
+      return js.JsElementsCreateOptions(
+        mode: deferred.mode,
+        currency: deferred.currency,
+        amount: deferred.amount,
+        setupFutureUsage: deferred.setupFutureUsage,
+        captureMethod: deferred.captureMethod,
+        paymentMethodTypes: deferred.paymentMethodTypes
+            ?.map((t) => t.toJS)
+            .toList()
+            .toJS,
+        customerSessionClientSecret: widget.customerSessionClientSecret,
+        appearance: appearanceJs,
+      );
+    }
     return js.JsElementsCreateOptions(
       clientSecret: widget.clientSecret,
       customerSessionClientSecret: widget.customerSessionClientSecret,
-      appearance: appearance.toJson().jsify() as js.JsElementAppearance,
+      appearance: appearanceJs,
     );
   }
 
